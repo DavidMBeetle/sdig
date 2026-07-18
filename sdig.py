@@ -26,8 +26,6 @@ class Proxy():
     
     def initilialise(self, socket): #using this as a function since we have to reinitiliase the proxy for each time we restart the socket
         #initialises the proxy
-        print(self.address)
-        print(self.port)
         socket.set_proxy(socks.SOCKS5, self.address, self.port)
 
 
