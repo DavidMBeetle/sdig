@@ -29,7 +29,7 @@ python3 -m venv sdigVirtrualEnvironment
 4. 
 Load into your virtrual environment
 ```zsh
-source PATH/bin/activate
+source sdigVirtrualEnvironment/bin/activate
 ```
 
 5. 
