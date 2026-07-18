@@ -1,0 +1,2 @@
+PySocks==1.7.1
+dnspython==2.8.0
