@@ -40,7 +40,7 @@ def make_DNS_Query(Domain_Name, rdQuery_type): #created function to create a DNS
     
 #VERSION variable, change as you go:
 
-sdig_version = "Version Alpha 0.1, early development build"
+sdig_version = "Official release 1.0"
 
 #parsers
 #initialising the parser
