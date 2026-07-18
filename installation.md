@@ -1,4 +1,4 @@
-In order to install this program it's highly recommended you use a virtrual environment.
+During installation and use, it's highly recommended you use a virtual environment.
 
 To start, cd into any folder you want to built this in, keep in mind that it will build a folder for you in that folder.
 
