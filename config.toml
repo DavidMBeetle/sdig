@@ -1,0 +1,19 @@
+#Rename this file to config.toml if you want it to be used in sdig
+
+[DNS_Servers]
+
+[DNS_Servers.Cloudflare]
+IP_List = ["1.1.1.1", "1.0.0.1"]
+CN = "cloudflare-dns.com"
+
+[DNS_Servers.Google]
+IP_List = ["8.8.8.8", "8.8.4.4"]
+CN = "dns.google"
+
+[DNS_Servers.Quad9]
+IP_List = ["9.9.9.9", "149.112.112.112"]
+CN = "dns.quad9.net"
+
+[DNS_Servers.Mullvad]
+IP_List = ["194.242.2.2", "194.242.2.3"]
+CN = "dns.mullvad.net"
