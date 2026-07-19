@@ -12,6 +12,8 @@ import dns.rdatatype
 import dns.query #gives you manual dns querying similar to dns.message as well as network management which is useful.
 #we're only importing recieve TCP to skip all the manual TCP tags and decodings.
 import dns.message #to create the DNS query before sending
+import dns.reversename
+import dns.name #gives compatability with dns.reversename.
 
 #classes
 class Proxy():
@@ -30,6 +32,21 @@ class Proxy():
         #initialises the proxy
         socket.set_proxy(socks.SOCKS5, self.address, self.port)
 
+class Reverse_Name_Search():
+
+    def __init__(self, IP):
+        try:
+            self.reverseAddress = str(dns.reversename.from_address(IP)) #converting to string to make it easier to save in here
+        except dns.exception.SyntaxError:
+            sys.exit("Malformed IP address based syntax error. Terminating program. Double check that what you put in with the domain flag is an IPV4 or IPV6 address.")
+        except:
+            sys.exit("An uknown error occured…")
+
+    def ReverseQuery(self):
+        return make_DNS_Query(self.reverseAddress, rdQuery_type=dns.rdatatype.PTR)
+
+
+
 
 #functions
 
@@ -40,39 +57,48 @@ def make_DNS_Query(Domain_Name, rdQuery_type): #created function to create a DNS
     
 #VERSION variable, change as you go:
 
-sdig_version = "Version 1.1.0"
+sdig_version = "Version 1.2.0"
 
 #parsers
 #initialising the parser
 parser = argparse.ArgumentParser(prog="sdig", description="A secure DNS look up alternative to the dig terminal utility. Uses DNS over TCP with TLS/SSH (DoT) and interacts with raw and encrypted sockets.", epilog="Happy hunting")
 
 #making arguments
-parser.add_argument("-d", "--domain", required=True, help="Required tag, tells the DNS server what domain to ask the DNS server t ofind", type=str, dest="Target_Domain")
+parser.add_argument("-d", "--domain", required=True, help="Required tag, tells the DNS server what domain to ask the DNS server to find. If you put -x then you can input an IP here for a revers search.", type=str, dest="Target_Domain")
 parser.add_argument("-t", "--rdtype", default='A', dest="rd_type", help="The data type demanded in the DNS request, example MX server. Invalid responses will lead to an error.", type=str)
 parser.add_argument("--proxy", required=False, dest="Proxy", type=str, help="Proxy argument to route your DNS querries through a proxy. Some DNS servers will reject the proxy.")
 parser.add_argument("-v", "--version", help=f"Prints the current version, that being {sdig_version}", action="version", version=sdig_version)
 parser.add_argument("--timeout", help="How long the program will wait in seconds before giving up on a connection. Default is 30. This is an integer, do not put in values with decimals.", type=int, default=30, required=False, dest="timeout")
 parser.add_argument("--verbose", help="Makes the program a lot more expressive in terms of it's actions and tells you what's happening.", action='store_true', dest="verboseStatus")
+parser.add_argument("-x", "--Reverse", help="Makes the DNS perform a reverse search, finding the domain linked to an IP address. This cannot be mixed with -t/--rdtype as in order to do this rd-type is forced into PTR (reverse DNS search). Put the IP after the -d flag.", required=False, action="store_true", dest="Reverse_DNS_LookUp")
 
 args = parser.parse_args() #parsing it all
 
 if args.Proxy != None:
     Main_proxy = Proxy(args.Proxy)
 
+#checking if reverse search is being used wrong
+if (args.Reverse_DNS_LookUp) and (args.rd_type != "A"): #checking if it was changed form default
+    sys.exit("-x or --Reverse cannot be used with domain or rdtype flags. User error.")
+elif (args.Reverse_DNS_LookUp):
+    #instating Reverse search object
+    reverseDNS_Object = Reverse_Name_Search(args.Target_Domain)
+
 ###loading toml file
 
 #finding directory:
 script_dir = Path(__file__).resolve().parent #finds the folder the script is in
 config_path = Path(script_dir / "config.toml")
-if (config_path.exists == False):
+if not (config_path.exists()):
     sys.exit("Config file not detected, clean shut down. Please ensure the following:")
     print
 #using with to automatically close the file immediately after
 with open(config_path, "rb") as config_File:
     config = tomllib.load(config_File) #saves the entire toml file after loading it into memory
+del script_dir #clearing memory from no longer needed information
+del config_path
 
 DNS_Servers = config["DNS_Servers"] #stores the DNS_Servers dictionary in this variable so the rest of everything will work.
-
 
 #Creating raw socket
 Raw_Socket = socks.socksocket()
@@ -131,7 +157,13 @@ for servers in DNS_Servers:
 if (TLSConnected != True):
     sys.exit("Could not connect to ANY DNS servers in the lists. It is likely your ISP or firewall is blocking port 853 (the port used for DNS over TLS or DoT), check out your network configuration and search up if your ISP is blocking it. There is also the almost impossible situation where every single one of those DNS servers is down, but that's highly unlikely. Also check if your network is up.")
 
-DoT_Socket.sendall(make_DNS_Query(Target_Domain, rdQuery_type=Targetted_Data_class)) #sending our dns.message based querry using the function we made before.
+if (args.Reverse_DNS_LookUp):
+    #place holder to hold the DNS reverse query, makes it easier to read rather than a massive line.
+    DNS_reverseQuerryHolder = reverseDNS_Object.ReverseQuery()
+    DoT_Socket.sendall(DNS_reverseQuerryHolder)
+    del DNS_reverseQuerryHolder #deleting the object to optimise memory usage.
+else:
+    DoT_Socket.sendall(make_DNS_Query(Target_Domain, rdQuery_type=Targetted_Data_class)) #sending our dns.message based querry using the function we made before.
 start_time = time.time()
 
 try:
@@ -139,6 +171,8 @@ try:
     end_time = time.time()
     DoT_Socket.close()
     Raw_Socket.close()
+    del DoT_Socket #clearing socket objects since they are no longer necessary, optimises memory usage.
+    del Raw_Socket
     if (args.verboseStatus):
         print("Successfully recieved response")
     print("Results:")
