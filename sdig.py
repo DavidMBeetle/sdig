@@ -64,11 +64,14 @@ if args.Proxy != None:
 #finding directory:
 script_dir = Path(__file__).resolve().parent #finds the folder the script is in
 config_path = Path(script_dir / "config.toml")
+if (config_path.exists == False):
+    sys.exit("Config file not detected, clean shut down. Please ensure the following:")
+    print
 #using with to automatically close the file immediately after
 with open(config_path, "rb") as config_File:
     config = tomllib.load(config_File) #saves the entire toml file after loading it into memory
 
-DNS_Servers = config["DNS_Servers"]
+DNS_Servers = config["DNS_Servers"] #stores the DNS_Servers dictionary in this variable so the rest of everything will work.
 
 
 #Creating raw socket
