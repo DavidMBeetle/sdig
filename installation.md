@@ -10,13 +10,13 @@ Second note, you will need python to do this. This was build using python 3.14.5
 Steps:
 
 1.
-```zsh
+```Posix Shell
 git clone https://github.com/DavidMBeetle/sdig
 ```
 
 2.
 After that cd into the folder
-```zsh
+```Posix Shell
 cd sdig
 ```
 
@@ -28,7 +28,7 @@ python3 -m venv sdigVirtrualEnvironment
 
 4. 
 Load into your virtrual environment
-```zsh
+```Posix Shell
 source sdigVirtrualEnvironment/bin/activate
 ```
 
@@ -41,7 +41,7 @@ pip3 install -r requirements.txt
 6. 
 For all macOS users, in order for the program to work, u need to run the python given install certs script. You can do it like so:
 
-```zsh
+```Posix Shell
 open /Applications/Python\ 3.14/Install\ Certificates.command
 ```
 
@@ -57,17 +57,24 @@ Steps for daily use:
 Now then, to be able to use it in a daily life or new instance you have to do the following. First change directory into your sdig file.
 If it's in home directory then it would be
 
-```zsh
+```Posix Shell
 cd ~/sdig
 ```
 
-2. 
+2. Ensure that you copied the config file into your folder and that you like the settings (customizing it is advanced, you can keep defaults and it'll work fine)
+
+```Posix shell
+ls
+open config.toml
+```
+
+4. 
 Then you need to load into your virtrual environment each time you use it.
 ```zsh
 source sdigVirtrualEnvironment/bin/activate
 ```
 
-3. Run the program like so:
+4. Run the program like so:
 ```Shell python
 python3 sdig.py -h
 ```
