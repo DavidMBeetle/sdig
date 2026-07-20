@@ -59,7 +59,7 @@ def make_DNS_Query(Domain_Name, rdQuery_type): #created function to create a DNS
     
 #VERSION variable, change as you go:
 
-sdig_version = "Version 1.2.1"
+sdig_version = "Version 1.2.2"
 
 #parsers
 #initialising the parser
@@ -132,7 +132,7 @@ for servers in DNS_Servers:
         Raw_Socket.connect((DNS_Servers[servers]["IP_List"][0], 853)) #port 853 is the port for TLS encrypted DNS connections
         if (args.verboseStatus):
             print("Successfully connected to DNS server")
-        print(f"Using {DNS_Servers[servers]["CN"]}")
+        print(f"Using {DNS_Servers[servers]['CN']}")
         DoT_Socket = TLS_settings.wrap_socket(Raw_Socket, server_hostname=DNS_Servers[servers]["CN"])
         TLSConnected = True
         if (args.verboseStatus):
@@ -195,7 +195,7 @@ for servers in DNS_Servers:
     #Implementing a check to see if there is no answer, if so, it will switch providers.
     if (len(DNS_Response.answer) == 0):
         Fail_Counter = Fail_Counter + 1
-        print(f"No results found at {DNS_Servers[servers]["CN"]}, switching to next provider in config.")
+        print(f"No results found at {DNS_Servers[servers]['CN']}, switching to next provider in config.")
         try:
             #reinstating all of the sockets in case of an error
             DoT_Socket.close()
