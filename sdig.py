@@ -47,6 +47,8 @@ class Reverse_Name_Search():
 
 
 
+#Automating the DNS resposne part
+
 
 #functions
 
@@ -57,11 +59,12 @@ def make_DNS_Query(Domain_Name, rdQuery_type): #created function to create a DNS
     
 #VERSION variable, change as you go:
 
-sdig_version = "Version 1.2.0"
+sdig_version = "Version 1.2.1"
 
 #parsers
 #initialising the parser
 parser = argparse.ArgumentParser(prog="sdig", description="A secure DNS look up alternative to the dig terminal utility. Uses DNS over TCP with TLS/SSH (DoT) and interacts with raw and encrypted sockets.", epilog="Happy hunting")
+
 
 #making arguments
 parser.add_argument("-d", "--domain", required=True, help="Required tag, tells the DNS server what domain to ask the DNS server to find. If you put -x then you can input an IP here for a revers search.", type=str, dest="Target_Domain")
@@ -157,29 +160,68 @@ for servers in DNS_Servers:
 if (TLSConnected != True):
     sys.exit("Could not connect to ANY DNS servers in the lists. It is likely your ISP or firewall is blocking port 853 (the port used for DNS over TLS or DoT), check out your network configuration and search up if your ISP is blocking it. There is also the almost impossible situation where every single one of those DNS servers is down, but that's highly unlikely. Also check if your network is up.")
 
-if (args.Reverse_DNS_LookUp):
-    #place holder to hold the DNS reverse query, makes it easier to read rather than a massive line.
-    DNS_reverseQuerryHolder = reverseDNS_Object.ReverseQuery()
-    DoT_Socket.sendall(DNS_reverseQuerryHolder)
-    del DNS_reverseQuerryHolder #deleting the object to optimise memory usage.
-else:
-    DoT_Socket.sendall(make_DNS_Query(Target_Domain, rdQuery_type=Targetted_Data_class)) #sending our dns.message based querry using the function we made before.
-start_time = time.time()
+#initiliasing variables before the loop to create global constants that are necessary for safe guarding the loop
+#Variable is needed in order to stop it from reinitiliasing query timer each time.
+started = False
+Fail_Counter = 0
+for servers in DNS_Servers:
+    #First go at this is done using the settings from the prior loop, only if it doesn't get an error, does it go through this one.
+    if (args.Reverse_DNS_LookUp):
+        print(f"Using {DNS_Servers[servers]["CN"]}")
+        #place holder to hold the DNS reverse query, makes it easier to read rather than a massive line.
+        DNS_reverseQuerryHolder = reverseDNS_Object.ReverseQuery()
+        try:
+            DoT_Socket.sendall(DNS_reverseQuerryHolder)
+        except:
+            sys.exit("Failed to send dns Querry over socket. Error, quitting.")
+        del DNS_reverseQuerryHolder #deleting the object to optimise memory usage.
+    else:
+        try:
+            DoT_Socket.sendall(make_DNS_Query(Target_Domain, rdQuery_type=Targetted_Data_class)) #sending our dns.message based querry using the function we made before.
+        except:
+            sys.exit("Failed to send dns Querry over socket. Error, quitting.")
+    #making it check if it's already registered the start time. It's supposed to be a timer from the first querry.
+    #By setting is as false first, and only setting it as true on the first loop, it will stop it from repeatedly restarting
+    if (started == False):
+        start_time = time.time()
+        started = True
+    try:
+        DNS_Response, Response_Time = dns.query.receive_tcp(sock=DoT_Socket, expiration=args.timeout)
+    except dns.exception.Timeout:
+        print("Timeout error, try increasing timeout period.")
+    except:
+        print("Uknown error.")
 
-try:
-    DNS_Response, Response_Time = dns.query.receive_tcp(sock=DoT_Socket, expiration=args.timeout)
-    end_time = time.time()
-    DoT_Socket.close()
-    Raw_Socket.close()
-    del DoT_Socket #clearing socket objects since they are no longer necessary, optimises memory usage.
-    del Raw_Socket
-    if (args.verboseStatus):
-        print("Successfully recieved response")
-    print("Results:")
-    print(DNS_Response)
-    if (args.verboseStatus):
-        print(f"Query time: {int((end_time - start_time) * 1000)} ms") #converts query time into milliseconds and then prints it.
-except dns.exception.Timeout:
-    print("Timeout error, try increasing timeout period.")
-except:
-    print("Uknown error.")
+    #Implementing a check to see if there is no answer, if so, it will switch providers.
+    if (len(DNS_Response.answer) == 0):
+        Fail_Counter = Fail_Counter + 1
+        print(f"No results found at {DNS_Servers[servers]["CN"]}, switching to next provider in config.")
+        try:
+            #reinstating all of the sockets in case of an error
+            DoT_Socket.close()
+            Raw_Socket.close()
+            Raw_Socket = socks.socksocket()
+            if args.Proxy != None:
+                Main_proxy.initilialise(Raw_Socket)
+            Raw_Socket.connect((DNS_Servers[servers]["IP_List"][0], 853))
+            DoT_Socket = TLS_settings.wrap_socket(Raw_Socket, server_hostname=DNS_Servers[servers]["CN"])
+            #automatically switches to the next provider once this is done.
+            continue
+        except:
+            print("An error occured in connection or TLS settings")
+    else:
+        break
+del started #deleting variable for preventing start time from being over turned since it's no longer needed.
+end_time = time.time()
+
+DoT_Socket.close()
+Raw_Socket.close()
+del DoT_Socket #clearing socket objects since they are no longer necessary, optimises memory usage.
+del Raw_Socket
+if (args.verboseStatus):
+    print("Successfully recieved response")
+print("Results:")
+print(DNS_Response)
+if (args.verboseStatus):
+    print(f"Failure count: {Fail_Counter} (amount of DNS servers querried before arriving a response)")
+    print(f"Query time: {int((end_time - start_time) * 1000)} ms") #converts query time into milliseconds and then prints it.
