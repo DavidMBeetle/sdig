@@ -19,6 +19,7 @@ Or if you don't have git, you can do the same thing using curl, just copy paste 
 curl -L https://github.com/DavidMBeetle/sdig/archive/refs/heads/main.zip --output sdig.zip #using curl with redirects
 unzip sdig.zip #unzips it into the main folder
 rm sdig.zip #removes the old zip file
+mv sdig-main sdig #renames the folder to just sdig
 ```
 
 2.
