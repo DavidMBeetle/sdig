@@ -14,6 +14,13 @@ Steps:
 git clone https://github.com/DavidMBeetle/sdig
 ```
 
+Or if you don't have git, you can do the same thing using curl, just copy paste this entire thing into your terminal instead of the git:
+```Posix Shell
+curl -L https://github.com/DavidMBeetle/sdig/archive/refs/heads/main.zip --output sdig.zip #using curl with redirects
+unzip sdig.zip #unzips it into the main folder
+rm sdig.zip #removes the old zip file
+```
+
 2.
 After that cd into the folder
 ```Posix Shell
