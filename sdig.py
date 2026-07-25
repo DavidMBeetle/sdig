@@ -411,8 +411,6 @@ if (DNS_Response is None) or (len(DNS_Response.answer) == 0):
             if (key.data.Response != None):
                 if (len(key.data.Response.answer) == 0) and (key.data.isAlive == True):
                     Failed_Attempts = Failed_Attempts + 1
-            elif (key.data.Response == None):
-                print("None")
         if (Failed_Attempts >= len(list(sel.get_map().values()))):
             break
 
