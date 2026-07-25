@@ -25,3 +25,10 @@ source sdigVirtrualEnvironment/bin/activate #load into your virtrual environment
 pip3 install -r requirements.txt
 deactivate
 ```
+
+To activate it or use it run
+```Posix shell
+cd ~/sdig
+source ~/sdig/sdig/sdigVirtrualEnvironment/bin/activate
+python3 sdig.py -h
+```
