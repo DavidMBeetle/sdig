@@ -76,7 +76,12 @@ ls
 open config.toml
 ```
 
-4. 
+If you cannot open it, or don't have an app capable of doing so (usually you should use a code editor or IDE like VS code) you can use nano. Keep in mind you can usually use most text editors too. Nano is a built in terminal based ultra light weight text editor:
+```Posix shell
+nano config.toml
+```
+
+3. 
 Then you need to load into your virtrual environment each time you use it.
 ```zsh
 source sdigVirtrualEnvironment/bin/activate
