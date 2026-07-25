@@ -5,7 +5,7 @@ If you have git use this:
 ```Posix shell
 cd #changes directory to your root directory
 git clone https://github.com/DavidMBeetle/sdig
-cd ~/sdig moves into your sdig directory
+cd ~/sdig #moves into your sdig directory
 python3 -m venv sdigVirtrualEnvironment #creates virtrual environment for sdig
 source sdigVirtrualEnvironment/bin/activate #load into your virtrual environment
 pip3 install -r requirements.txt
