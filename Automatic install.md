@@ -1,3 +1,4 @@
+Keep in mind this was made using python 3.14.5
 This is an install guide for people who want to simplicity, this will involve installing it into your root directory, and will be one copy paste (to install)
 
 To install the script, copy and paste the following into your terminal:
