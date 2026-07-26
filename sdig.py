@@ -76,8 +76,15 @@ class DNS_Async_Sockets(socks.socksocket):
         except TimeoutError:
             print("Timeout occured on original connection. Please check if you have an internet connection or the server is up")
             self.isAlive = False
-        self.encrypted = TLS_settings.wrap_socket(self, server_hostname=self.hostname, do_handshake_on_connect=False)
-        sel.register(self.encrypted, events=selectors.EVENT_WRITE, data=self)
+        except ConnectionRefusedError:
+            print("Server may not exist or it is blocking the connection")
+            self.isAlive = False
+        except:
+            print("An uknown error occured. Dropping this socket")
+            self.isAlive = False
+        if (self.isAlive):
+            self.encrypted = TLS_settings.wrap_socket(self, server_hostname=self.hostname, do_handshake_on_connect=False)
+            sel.register(self.encrypted, events=selectors.EVENT_WRITE, data=self)
 
         #preparing space in memory for later
         self.Response = None
@@ -144,7 +151,7 @@ def make_DNS_Query(Domain_Name, rdQuery_type): #created function to create a DNS
     
 #VERSION variable, change as you go:
 
-sdig_version = "Version 1.2.3"
+sdig_version = "Version 1.2.4"
 
 #parsers
 #initialising the parser
@@ -201,7 +208,7 @@ Targetted_Data_class = dns.rdatatype.from_text(args.rd_type)
 
 #Preparations for TLS encryption:
 TLS_settings = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
-TLS_settings.load_default_certs()
+TLS_settings.load_default_certs() #this is very important, it loads the operating system certifications for TLS
 TLS_settings.minimum_version = ssl.TLSVersion.TLSv1_3 #forcing TLS v1.3 for absolute security.
 
 #trying to make proxy DNS connections:
@@ -234,23 +241,24 @@ for servers in DNS_Servers:
         Raw_Socket.close()
         #trying everything again, this time switching the server to the second one
         print(f"Error: TLS handshake or original connection failed with {DNS_Servers[servers]}. Trying next option.")
-        try:
-            Raw_Socket = socks.socksocket() #reinstating socket after each time in case of error, sockets cannot be reused and must be entirely restarted
-            if (args.Proxy != None): #reinstating proxy connection on reset socket
-                Main_proxy.initialilise(Raw_Socket)
-            #NOTE: not using try: and except commands because i want to see the error message during development, I'll be using try later on
-            Raw_Socket.connect((DNS_Servers[servers]["IP_List"][1], 853)) #port 853 is the port for TLS encrypted DNS connections
-            if (args.verboseStatus): #checking for verbose status before printing extra statements
-                print("Successfully connected to DNS server")
-            DoT_Socket = TLS_settings.wrap_socket(Raw_Socket, server_hostname=DNS_Servers[servers]["CN"])
-            TLSConnected = True
-            if (args.verboseStatus):
-                print("Successfully initialised TLS 1.3")
-            break
-        except:
-            print(f"An error occured on the secondary IP for {DNS_Servers[servers]}, switching provider.")
-            DoT_Socket.close()
-            Raw_Socket.close()
+        if (len(DNS_Servers[servers]["IP_List"]) > 1):
+            try:
+                Raw_Socket = socks.socksocket() #reinstating socket after each time in case of error, sockets cannot be reused and must be entirely restarted
+                if (args.Proxy != None): #reinstating proxy connection on reset socket
+                    Main_proxy.initialilise(Raw_Socket)
+                #NOTE: not using try: and except commands because i want to see the error message during development, I'll be using try later on
+                Raw_Socket.connect((DNS_Servers[servers]["IP_List"][1], 853)) #port 853 is the port for TLS encrypted DNS connections
+                if (args.verboseStatus): #checking for verbose status before printing extra statements
+                    print("Successfully connected to DNS server")
+                DoT_Socket = TLS_settings.wrap_socket(Raw_Socket, server_hostname=DNS_Servers[servers]["CN"])
+                TLSConnected = True
+                if (args.verboseStatus):
+                    print("Successfully initialised TLS 1.3")
+                break
+            except:
+                print(f"An error occured on the secondary IP for {DNS_Servers[servers]}, switching provider.")
+                DoT_Socket.close()
+                Raw_Socket.close()
 
 if (TLSConnected != True):
     sys.exit("Could not connect to ANY DNS servers in the lists. It is likely your ISP or firewall is blocking port 853 (the port used for DNS over TLS or DoT), check out your network configuration and search up if your ISP is blocking it. There is also the almost impossible situation where every single one of those DNS servers is down, but that's highly unlikely. Also check if your network is up.")
@@ -291,6 +299,9 @@ except:
 
 Failed_Attempts = 0
 
+###This part is where we go through the asynchronous loop
+#we only do this if the first sequential loops fails to lower exposure
+#the less servers see the querry, the better.
 
 if (DNS_Response is None) or (len(DNS_Response.answer) == 0):
     for servers in DNS_Servers:
