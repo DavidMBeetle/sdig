@@ -9,11 +9,3 @@
  Additionally the original connection is not encrypted, it makes the TLS handshake after direct connection.
 
  All of it, obviously, runs on TCP instead of UDP.
-
- I hope this script is useful to you guys.
-
-If you want to support my work you can donate to me in Monero (XMR)
-
-My monero address: 88VkkhX77uXH7RaJ58SVae3BHY62wcM9aKZHqPm5d8JVEEKCfqz2nQp84HwEB621CHhqTC9h49m4BaLtmg5JksFzEHrZ4iV
-
-This is completely optional, please feel no pressure to do so.
